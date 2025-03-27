@@ -1,213 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telugu Voice to English Text</title>
+    <title>Telugu Voice to English Translator</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            color: #333;
+        body { font-family: Arial; padding: 20px; }
+        button { 
+            padding: 15px; margin: 10px;
+            background: #4285f4; color: white;
+            border: none; border-radius: 5px;
         }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        button {
-            background-color: #4285f4;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            margin: 10px 5px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-        #stopBtn {
-            background-color: #e74c3c;
-        }
-        .status {
-            color: #7f8c8d;
-            font-style: italic;
-            margin: 15px 0;
-            text-align: center;
-        }
-        .result-box {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 15px 0;
-            min-height: 50px;
-            background-color: #f9f9f9;
-        }
-        h2 {
-            color: #2c3e50;
-            margin-top: 25px;
-        }
-        .btn-container {
-            text-align: center;
-            margin: 20px 0;
+        #result, #translation { 
+            padding: 15px; margin: 15px 0; 
+            border: 1px solid #ddd; min-height: 50px;
         }
     </style>
 </head>
 <body>
-    <h1>Telugu Voice to English Text</h1>
+    <h1>Telugu Voice to English Translator</h1>
     
-    <div class="btn-container">
-        <button id="startBtn">Start Recording</button>
-        <button id="stopBtn" disabled>Stop</button>
-    </div>
+    <button id="startBtn">🎤 Start Listening (Telugu)</button>
+    <button id="stopBtn" disabled>⏹ Stop</button>
     
-    <div id="status" class="status">Press "Start Recording" and speak in Telugu</div>
+    <h3>Recognized Telugu:</h3>
+    <div id="result">...</div>
     
-    <h2>Recognized Telugu:</h2>
-    <div id="result" class="result-box">...</div>
-    
-    <h2>English Translation:</h2>
-    <div id="translation" class="result-box">...</div>
+    <h3>English Translation:</h3>
+    <div id="translation">...</div>
 
     <script>
-        // Enhanced banking translations dictionary
-        const translations = {
-            // Account related
-            "ఖాతా నంబరు ఏమిటి": "What is your account number?",
-            "ఖాతా నంబరు తెలుపు": "Please tell me your account number",
-            "ఖాతా సంఖ్య ఏమిటి": "What is the account number?",
-            
-            // Transactions
-            "ఎంత డబ్బు జమ చేయాలి": "How much money should I deposit?",
-            "ఎంత డబ్బు ఉపసంహరించాలి": "How much money to withdraw?",
-            "నా బ్యాలెన్స్ ఎంత": "What is my account balance?",
-            
-            // Services
-            "రుణం కావాలి": "I need a loan",
-            "క్రెడిట్ కార్డు కావాలి": "I need a credit card",
-            
-            // Problems
-            "కార్డు పోయింది": "I lost my card",
-            "పిన్ నంబర్ మర్చిపోయాను": "I forgot my PIN number",
-            
-            // Common phrases
-            "కృపయా వేచి ఉండండి": "Please wait",
-            "రసీదు ఇవ్వండి": "Please give me the receipt",
-            "సంతకం ఎక్కడ చేయాలి": "Where should I sign?"
-        };
-
-        // DOM elements
+        // Speech Recognition
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const resultDiv = document.getElementById('result');
         const translationDiv = document.getElementById('translation');
-        const statusDiv = document.getElementById('status');
-
-        let recognition;
-        let finalTranscript = '';
         
-        // Initialize speech recognition
-        function initSpeechRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
-            if (!SpeechRecognition) {
-                statusDiv.textContent = "Speech recognition not supported in your browser. Try Chrome or Edge.";
-                startBtn.disabled = true;
-                return;
-            }
-            
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
+        let recognition;
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
             recognition.lang = 'te-IN'; // Telugu (India)
-            
-            recognition.onstart = () => {
-                statusDiv.textContent = "Listening... Speak in Telugu now";
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                finalTranscript = '';
-                resultDiv.textContent = '...';
-                translationDiv.textContent = '...';
-            };
+            recognition.continuous = true;
             
             recognition.onresult = (event) => {
-                let interimTranscript = '';
-                
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
-                    } else {
-                        interimTranscript += transcript;
-                    }
-                }
-                
-                resultDiv.textContent = finalTranscript || interimTranscript || '...';
-                
-                if (finalTranscript) {
-                    const translated = translateTelugu(finalTranscript);
-                    translationDiv.textContent = translated;
-                }
+                const transcript = event.results[event.results.length-1][0].transcript;
+                resultDiv.textContent = transcript;
+                translateWithGoogle(transcript);
             };
-            
-            recognition.onerror = (event) => {
-                statusDiv.textContent = `Error: ${event.error}`;
-                resetButtons();
-            };
-            
-            recognition.onend = () => {
-                if (finalTranscript === '') {
-                    statusDiv.textContent = "Didn't hear anything. Try again.";
-                } else {
-                    statusDiv.textContent = "Press 'Start Recording' to continue";
-                }
-                resetButtons();
-            };
+        } else {
+            resultDiv.textContent = "Voice recognition not supported in this browser";
         }
+
+        // Google Translate Web Interface (No API Key)
+        function translateWithGoogle(teluguText) {
+            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=te&tl=en&dt=t&q=${encodeURIComponent(teluguText)}`)
+                .then(response => response.json())
+                .then(data => {
+                    translationDiv.textContent = data[0][0][0];
+                })
+                .catch(error => {
+                    translationDiv.textContent = "Translation failed. Try again.";
+                });
+        }
+
+        // Button Controls
+        startBtn.addEventListener('click', () => {
+            recognition.start();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        });
         
-        function resetButtons() {
+        stopBtn.addEventListener('click', () => {
+            recognition.stop();
             startBtn.disabled = false;
             stopBtn.disabled = true;
-        }
-        
-        function translateTelugu(teluguText) {
-            // Clean the text
-            const cleanText = teluguText.trim().replace(/\.$/, '');
-            
-            // Check for exact match first
-            if (translations[cleanText]) {
-                return translations[cleanText];
-            }
-            
-            // Check for partial matches
-            for (const [telugu, english] of Object.entries(translations)) {
-                if (cleanText.includes(telugu)) {
-                    return english;
-                }
-            }
-            
-            return "Couldn't translate. Try speaking clearly or use simpler phrases.";
-        }
-        
-        // Initialize when page loads
-        window.onload = function() {
-            initSpeechRecognition();
-            
-            startBtn.addEventListener('click', () => {
-                recognition.start();
-            });
-            
-            stopBtn.addEventListener('click', () => {
-                recognition.stop();
-            });
-        };
+        });
     </script>
 </body>
 </html>
